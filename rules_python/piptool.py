@@ -177,13 +177,8 @@ def main():
         name = "{repo_name}",
         whl = "@{name}//:{path}",
         requirements = "@{name}//:requirements.bzl",
-        extras = [{extras}]
     )""".format(name=args.name, repo_name=wheel.repository_name(),
-                path=wheel.basename(),
-                extras=','.join([
-                  '"%s"' % extra
-                  for extra in possible_extras.get(wheel, [])
-                ]))
+                path=wheel.basename())
 
   whl_targets = ','.join([
     ','.join([

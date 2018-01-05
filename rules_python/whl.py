@@ -123,9 +123,6 @@ parser.add_argument('--requirements', action='store',
 parser.add_argument('--directory', action='store', default='.',
                     help='The directory into which to expand things.')
 
-parser.add_argument('--extras', action='append',
-                    help='The set of extras for which to generate library targets.')
-
 def main():
   args = parser.parse_args()
   whl = Wheel(args.whl)
@@ -133,7 +130,8 @@ def main():
   # Extract the files into the current directory
   whl.expand(args.directory)
 
-  with open(os.path.join(args.directory, 'BUILD'), 'w') as f:
+  build_filepath = os.path.join(args.directory, 'BUILD')
+  with open(build_filepath, 'w') as f:
     f.write("""
 package(default_visibility = ["//visibility:public"])
 
@@ -147,26 +145,25 @@ py_library(
     # search path for anything that depends on this.
     imports = ["."],
     deps = [{dependencies}],
-)
-{extras}""".format(
+)""".format(
   requirements=args.requirements,
   dependencies=','.join([
     'requirement("%s")' % d
     for d in whl.dependencies()
-  ]),
-  extras='\n\n'.join([
-    """py_library(
-    name = "{extra}",
-    deps = [
-        ":pkg",{deps}
-    ],
-)""".format(extra=extra,
-            deps=','.join([
-                'requirement("%s")' % dep
-                for dep in whl.dependencies(extra)
-            ]))
-    for extra in args.extras or []
   ])))
+
+  for extra in whl.extras():
+    deps = ['requirement("%s")' % dep for dep in whl.dependencies(extra)]
+    with open('%s.%s' % (build_filepath, extra), 'w') as f:
+      f.write("""py_library(
+          name = "{extra}",
+          deps = [
+              ":pkg",{deps}
+          ],
+      )""".format(
+        extra=extra,
+        deps=','.join(deps))
+      )
 
 if __name__ == '__main__':
   main()

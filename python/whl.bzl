@@ -23,12 +23,6 @@ def _whl_impl(repository_ctx):
     "--requirements", repository_ctx.attr.requirements,
   ]
 
-  if repository_ctx.attr.extras:
-    args += [
-      "--extras=%s" % extra
-      for extra in repository_ctx.attr.extras
-    ]
-
   result = repository_ctx.execute(args)
   if result.return_code:
     fail("whl_library failed: %s (%s)" % (result.stdout, result.stderr))
@@ -41,6 +35,7 @@ whl_library = repository_rule(
             single_file = True,
         ),
         "requirements": attr.string(),
+        # DEPRECATED: kept for backward compability, but have no effect.
         "extras": attr.string_list(),
         "_script": attr.label(
             executable = True,
@@ -74,6 +69,4 @@ Args:
   requirements: The name of the pip_import repository rule from which to
     load this .whl's dependencies.
 
-  extras: A subset of the "extras" available from this <code>.whl</code> for which
-    <code>requirements</code> has the dependencies.
 """
